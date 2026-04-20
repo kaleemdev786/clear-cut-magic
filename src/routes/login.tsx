@@ -23,6 +23,15 @@ function LoginPage() {
             </span>
             ClearCUT AI
           </Link>
+          <div className="mx-auto w-full max-w-sm rounded-3xl border border-white/25 bg-white/10 p-6 text-center backdrop-blur-sm">
+            <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-white/20 shadow-glow">
+              <Lock className="h-8 w-8" />
+            </div>
+            <p className="mt-4 text-sm font-semibold uppercase tracking-[0.22em] text-white/80">Secure Access</p>
+            <p className="mt-2 text-sm text-white/90">
+              Your account and uploads are protected with encrypted sessions.
+            </p>
+          </div>
           <div>
             <h2 className="text-3xl font-bold">"Cut my product photo in 4 seconds. Replaced our $99/mo tool."</h2>
             <p className="mt-3 text-white/80">Maya · Shopify seller</p>
