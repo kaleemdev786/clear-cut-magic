@@ -43,36 +43,36 @@
 :root {
   --radius: 0.875rem;
 
-  /* Dark-first SaaS palette */
-  --background: oklch(0.18 0.03 265);          /* #0F172A */
-  --foreground: oklch(1 0 0);
+  /* Light palette */
+  --background: oklch(0.99 0.005 270);
+  --foreground: oklch(0.25 0.02 265);
 
-  --card: oklch(0.22 0.03 265);                /* #111827 */
-  --card-foreground: oklch(1 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.25 0.02 265);
 
-  --popover: oklch(0.22 0.03 265);
-  --popover-foreground: oklch(1 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.25 0.02 265);
 
   --primary: oklch(0.55 0.22 277);             /* #4F46E5 indigo */
   --primary-foreground: oklch(1 0 0);
 
   --secondary: oklch(0.78 0.13 210);           /* #06B6D4 cyan */
-  --secondary-foreground: oklch(0.18 0.03 265);
+  --secondary-foreground: oklch(0.99 0.005 270);
 
   --accent: oklch(0.58 0.25 295);              /* #7C3AED violet */
   --accent-foreground: oklch(1 0 0);
 
-  --muted: oklch(0.27 0.03 265);
-  --muted-foreground: oklch(0.72 0.03 255);    /* #94A3B8 */
+  --muted: oklch(0.94 0.01 265);
+  --muted-foreground: oklch(0.55 0.02 260);
 
   --destructive: oklch(0.62 0.24 27);
   --destructive-foreground: oklch(1 0 0);
 
   --success: oklch(0.72 0.18 145);             /* #22C55E */
-  --success-foreground: oklch(0.18 0.03 265);
+  --success-foreground: oklch(0.99 0.005 270);
 
-  --border: oklch(0.3 0.03 265);               /* #1F2937 */
-  --input: oklch(0.27 0.03 265);
+  --border: oklch(0.88 0.01 265);
+  --input: oklch(0.94 0.01 265);
   --ring: oklch(0.58 0.25 295);
 
   /* Gradients & effects */
@@ -87,7 +87,7 @@
 }
 
 .dark {
-  /* Same dark palette — app is dark-first */
+  /* Dark palette */
   --background: oklch(0.18 0.03 265);
   --foreground: oklch(1 0 0);
   --card: oklch(0.22 0.03 265);
@@ -113,6 +113,9 @@
 
 @layer base {
   html {
+    color-scheme: light;
+  }
+  html.dark {
     color-scheme: dark;
   }
   * {

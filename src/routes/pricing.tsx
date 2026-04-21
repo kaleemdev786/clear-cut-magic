@@ -81,7 +81,7 @@ function PricingPage() {
     priceLabel?: string;
   }) => {
     if (!getCurrentUser()) {
-      navigate({ to: "/signup" });
+      navigate({ to: "/login" });
       return;
     }
     setError(null);

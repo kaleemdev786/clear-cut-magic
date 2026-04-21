@@ -1,15 +1,33 @@
 import { Link } from "@tanstack/react-router";
-import { Sparkles } from "lucide-react";
+import { Moon, Sparkles, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getCurrentUser, signOut, subscribeToAppState } from "@/lib/app-state";
 
 export function SiteHeader() {
   const [user, setUser] = useState<ReturnType<typeof getCurrentUser>>(null);
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [themeReady, setThemeReady] = useState(false);
 
   useEffect(() => {
     setUser(getCurrentUser());
     return subscribeToAppState(() => setUser(getCurrentUser()));
   }, []);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const storedTheme = localStorage.getItem("clearcut:theme");
+    const nextTheme = storedTheme === "light" ? "light" : "dark";
+    root.classList.toggle("dark", nextTheme === "dark");
+    setTheme(nextTheme);
+    setThemeReady(true);
+  }, []);
+
+  const toggleTheme = () => {
+    const nextTheme = theme === "dark" ? "light" : "dark";
+    document.documentElement.classList.toggle("dark", nextTheme === "dark");
+    localStorage.setItem("clearcut:theme", nextTheme);
+    setTheme(nextTheme);
+  };
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/50 bg-background/70 backdrop-blur-xl">
@@ -81,6 +99,14 @@ export function SiteHeader() {
           >
             Try free
           </Link>
+          <button
+            type="button"
+            onClick={toggleTheme}
+            aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition-colors hover:text-foreground"
+          >
+            {themeReady && theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </button>
         </div>
       </div>
     </header>
