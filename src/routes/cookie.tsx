@@ -13,9 +13,9 @@ export const Route = createFileRoute("/cookie")({
 
 function CookiePage() {
   return (
-    <div className="min-h-screen">
+    <div className="flex min-h-screen flex-col">
       <SiteHeader />
-      <main className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
+      <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-16 sm:px-6 lg:px-8">
         <h1 className="text-3xl font-bold">Cookie Policy</h1>
         <div className="mt-6 space-y-4 text-sm text-muted-foreground">
           <p>We use local storage and essential cookies to keep sessions active and persist credits and order history.</p>

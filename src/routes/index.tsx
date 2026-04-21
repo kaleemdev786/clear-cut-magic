@@ -24,11 +24,12 @@ const plans = [
 
 function LandingPage() {
   return (
-    <div className="min-h-screen">
+    <div className="flex min-h-screen flex-col">
       <SiteHeader />
 
-      {/* Hero */}
-      <section className="relative overflow-hidden">
+      <div className="flex-1">
+        {/* Hero */}
+        <section className="relative overflow-hidden">
         <div className="mx-auto max-w-7xl px-4 pt-16 pb-24 sm:px-6 sm:pt-24 lg:px-8">
           <div className="grid items-center gap-12 lg:grid-cols-2">
             <motion.div
@@ -203,6 +204,7 @@ function LandingPage() {
           </div>
         </div>
       </section>
+      </div>
 
       <SiteFooter />
     </div>

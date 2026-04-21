@@ -337,9 +337,9 @@ function ToolPage() {
   });
 
   return (
-    <div className="min-h-screen">
+    <div className="flex min-h-screen flex-col">
       <SiteHeader />
-      <main className="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
+      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-12 sm:px-6 lg:px-8">
         <div className="text-center">
           <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
             Drop an image, get a <span className="text-brand-gradient">transparent cutout.</span>

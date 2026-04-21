@@ -40,9 +40,9 @@ function Dashboard() {
 
   if (!user) {
     return (
-      <div className="min-h-screen">
+      <div className="flex min-h-screen flex-col">
         <SiteHeader />
-        <main className="mx-auto max-w-3xl px-4 py-16 text-center sm:px-6 lg:px-8">
+        <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-16 text-center sm:px-6 lg:px-8">
           <h1 className="text-3xl font-bold">Sign in required</h1>
           <p className="mt-2 text-muted-foreground">Please sign in to view your profile, orders, and download history.</p>
           <Link to="/login" className="mt-6 inline-flex rounded-xl bg-brand-gradient px-5 py-2.5 text-sm font-semibold text-white shadow-glow">
@@ -61,9 +61,9 @@ function Dashboard() {
   ];
 
   return (
-    <div className="min-h-screen">
+    <div className="flex min-h-screen flex-col">
       <SiteHeader />
-      <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-12 sm:px-6 lg:px-8">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Welcome back</h1>
