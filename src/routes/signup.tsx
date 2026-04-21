@@ -26,7 +26,7 @@ function SignupPage() {
   const getFriendlySignUpError = (message: string) => {
     const normalized = message.toLowerCase();
     if (normalized.includes("email rate limit exceeded")) {
-      return "Account already requested recently. Try signing in, or verify your email from inbox.";
+      return "Supabase rate-limited signup emails for this address or IP. Wait a few minutes, then try again.";
     }
     return message;
   };
@@ -71,7 +71,7 @@ function SignupPage() {
 
         const loginError = signInError?.message.toLowerCase() ?? "";
         if (loginError.includes("email not confirmed")) {
-          setError("Your account is already created but email is not confirmed yet. Check your inbox and spam, then sign in.");
+          setError("Your account exists but email is not confirmed yet. Check inbox/spam, then sign in.");
           setIsSubmitting(false);
           return;
         }
