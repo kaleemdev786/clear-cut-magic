@@ -153,6 +153,7 @@ function ToolPage() {
   const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<ProcessedImage[]>([]);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [latestImageId, setLatestImageId] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState(() => getCurrentUser());
   const originalUrlRef = useRef<string | null>(null);
   const processedBlobUrlRef = useRef<string | null>(null);
@@ -160,7 +161,8 @@ function ToolPage() {
   const addToHistory = useCallback(
     (url: string) => {
       if (!currentUser) return;
-      addProcessedImage(currentUser.id, url);
+      const image = addProcessedImage(currentUser.id, url);
+      setLatestImageId(image.id);
       setHistory(listProcessedImages(currentUser.id));
     },
     [currentUser],
@@ -210,6 +212,7 @@ function ToolPage() {
     setOriginal(null);
     setProcessed(null);
     setError(null);
+    setLatestImageId(null);
   };
 
   const handleFile = useCallback(async (file: File) => {
@@ -423,7 +426,9 @@ function ToolPage() {
                       <button
                         type="button"
                         disabled={!processed || isDownloading}
-                        onClick={() => processed && downloadImage(processed)}
+                        onClick={() =>
+                          processed && downloadImage(processed, "clearcut-result.png", latestImageId ?? undefined)
+                        }
                         className="inline-flex items-center gap-2 rounded-xl bg-brand-gradient px-6 py-3 text-sm font-semibold text-white shadow-glow"
                       >
                         <Download className="h-4 w-4" /> {isDownloading ? "Downloading..." : "Download PNG"}
