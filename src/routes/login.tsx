@@ -2,7 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Sparkles, Mail, Lock } from "lucide-react";
-import { signIn } from "@/lib/app-state";
+import { setSessionUserId, upsertUserFromAuth } from "@/lib/app-state";
+import { supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -20,14 +21,33 @@ function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
-    const result = signIn(email, password);
-    if (!result.ok) {
-      setError(result.error);
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const { data, error: signInError } = await supabase.auth.signInWithPassword({
+      email: normalizedEmail,
+      password,
+    });
+
+    if (signInError) {
+      setError(signInError.message);
       return;
     }
+
+    const user = data.user;
+    if (!user) {
+      setError("Unable to sign in. Please try again.");
+      return;
+    }
+
+    upsertUserFromAuth({
+      id: user.id,
+      email: user.email ?? normalizedEmail,
+      name: (user.user_metadata?.full_name as string | undefined) ?? null,
+    });
+    setSessionUserId(user.id);
     navigate({ to: "/dashboard" });
   };
 

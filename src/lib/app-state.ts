@@ -1,3 +1,5 @@
+import { supabase } from "@/lib/supabase";
+
 export type AppUser = {
   id: string;
   name: string;
@@ -94,6 +96,38 @@ export const getCurrentUser = (): AppUser | null => {
   return db.users.find((user) => user.id === db.sessionUserId) ?? null;
 };
 
+export const upsertUserFromAuth = (payload: { id: string; email: string; name?: string | null }) => {
+  const db = readDB();
+  const normalizedEmail = payload.email.trim().toLowerCase();
+  const normalizedName = payload.name?.trim() || normalizedEmail.split("@")[0] || "User";
+  const existing = db.users.find((user) => user.id === payload.id);
+
+  if (existing) {
+    existing.email = normalizedEmail;
+    existing.name = normalizedName;
+    writeDB(db);
+    return existing;
+  }
+
+  const user: AppUser = {
+    id: payload.id,
+    name: normalizedName,
+    email: normalizedEmail,
+    password: "",
+    credits: DEFAULT_SIGNUP_CREDITS,
+    createdAt: new Date().toISOString(),
+  };
+  db.users.push(user);
+  writeDB(db);
+  return user;
+};
+
+export const setSessionUserId = (userId: string) => {
+  const db = readDB();
+  db.sessionUserId = userId;
+  writeDB(db);
+};
+
 export const signUp = (name: string, email: string, password: string) => {
   const db = readDB();
   const normalizedEmail = email.trim().toLowerCase();
@@ -124,7 +158,8 @@ export const signIn = (email: string, password: string) => {
   return { ok: true as const, user };
 };
 
-export const signOut = () => {
+export const signOut = async () => {
+  await supabase.auth.signOut();
   const db = readDB();
   db.sessionUserId = null;
   writeDB(db);

@@ -2,7 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Sparkles, Mail, Lock, User } from "lucide-react";
-import { signUp } from "@/lib/app-state";
+import { setSessionUserId, upsertUserFromAuth } from "@/lib/app-state";
+import { supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/signup")({
   head: () => ({
@@ -20,16 +21,76 @@ function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const getFriendlySignUpError = (message: string) => {
+    const normalized = message.toLowerCase();
+    if (normalized.includes("email rate limit exceeded")) {
+      return "Too many signup attempts. Please wait 60 seconds and try again.";
+    }
+    return message;
+  };
+
+  const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (isSubmitting) return;
     setError(null);
-    const result = signUp(name, email, password);
-    if (!result.ok) {
-      setError(result.error);
+    setIsSubmitting(true);
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const trimmedName = name.trim();
+    const { data, error: signUpError } = await supabase.auth.signUp({
+      email: normalizedEmail,
+      password,
+      options: {
+        data: {
+          full_name: trimmedName,
+        },
+      },
+    });
+
+    if (signUpError) {
+      setError(getFriendlySignUpError(signUpError.message));
+      setIsSubmitting(false);
       return;
     }
+
+    const user = data.user;
+    if (!user) {
+      setError("Unable to create account. Please try again.");
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!data.session) {
+      setError("Signup successful. Please verify your email, then sign in.");
+      setIsSubmitting(false);
+      return;
+    }
+
+    const { error: profileError } = await supabase.from("profiles").upsert(
+      {
+        id: user.id,
+        email: normalizedEmail,
+        full_name: trimmedName,
+      },
+      { onConflict: "id" },
+    );
+
+    if (profileError) {
+      setError(profileError.message);
+      setIsSubmitting(false);
+      return;
+    }
+
+    upsertUserFromAuth({
+      id: user.id,
+      email: user.email ?? normalizedEmail,
+      name: trimmedName,
+    });
+    setSessionUserId(user.id);
     navigate({ to: "/dashboard" });
+    setIsSubmitting(false);
   };
 
   return (
@@ -94,9 +155,10 @@ function SignupPage() {
           )}
           <button
             type="submit"
+            disabled={isSubmitting}
             className="mt-2 inline-flex w-full items-center justify-center rounded-xl bg-brand-gradient px-4 py-2.5 text-sm font-semibold text-white shadow-glow"
           >
-            Create account
+            {isSubmitting ? "Creating account..." : "Create account"}
           </button>
         </form>
 
