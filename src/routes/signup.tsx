@@ -26,7 +26,7 @@ function SignupPage() {
   const getFriendlySignUpError = (message: string) => {
     const normalized = message.toLowerCase();
     if (normalized.includes("email rate limit exceeded")) {
-      return "Too many signup attempts. Please wait 60 seconds and try again.";
+      return "Account already requested recently. Try signing in, or verify your email from inbox.";
     }
     return message;
   };
@@ -50,6 +50,33 @@ function SignupPage() {
     });
 
     if (signUpError) {
+      const normalizedError = signUpError.message.toLowerCase();
+      if (normalizedError.includes("email rate limit exceeded")) {
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+          email: normalizedEmail,
+          password,
+        });
+
+        if (!signInError && signInData.user) {
+          upsertUserFromAuth({
+            id: signInData.user.id,
+            email: signInData.user.email ?? normalizedEmail,
+            name: (signInData.user.user_metadata?.full_name as string | undefined) ?? trimmedName,
+          });
+          setSessionUserId(signInData.user.id);
+          navigate({ to: "/dashboard" });
+          setIsSubmitting(false);
+          return;
+        }
+
+        const loginError = signInError?.message.toLowerCase() ?? "";
+        if (loginError.includes("email not confirmed")) {
+          setError("Your account is already created but email is not confirmed yet. Check your inbox and spam, then sign in.");
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
       setError(getFriendlySignUpError(signUpError.message));
       setIsSubmitting(false);
       return;
