@@ -1,6 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { Check } from "lucide-react";
 import { SiteHeader, SiteFooter } from "@/components/site-chrome";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { getCurrentUser, addCredits, recordOrder } from "@/lib/app-state";
+import { openRazorpayCheckout } from "@/lib/razorpay";
 
 export const Route = createFileRoute("/pricing")({
   head: () => ({
@@ -23,6 +28,9 @@ const plans = [
   {
     name: "Pro",
     price: "$12",
+    amount: 999,
+    currency: "INR" as const,
+    credits: 200,
     desc: "For freelancers and creators.",
     features: ["Unlimited images", "HD quality", "7-day history", "Priority queue", "Email support"],
     cta: "Upgrade to Pro",
@@ -38,12 +46,91 @@ const plans = [
 ];
 
 const credits = [
-  { count: 50, price: "$5" },
-  { count: 250, price: "$20" },
-  { count: 1000, price: "$60" },
+  { count: 50, priceLabel: "$5", amount: 199, currency: "INR" as const },
+  { count: 250, priceLabel: "$20", amount: 699, currency: "INR" as const },
+  { count: 1000, priceLabel: "$60", amount: 1999, currency: "INR" as const },
 ];
 
 function PricingPage() {
+  const navigate = useNavigate();
+  const [selected, setSelected] = useState<
+    { label: string; amount: number; currency: "USD" | "INR"; credits: number; priceLabel?: string } | null
+  >(null);
+  const [isPaying, setIsPaying] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("checkout") === "pro") {
+      beginCheckout({ label: "Pro Plan", amount: 999, currency: "INR", credits: 200, priceLabel: "$12" });
+      return;
+    }
+    if (params.get("plan") === "business") {
+      setError("For Business plan, please contact sales from the section below.");
+      const enterprise = document.getElementById("enterprise-contact");
+      enterprise?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, []);
+
+  const beginCheckout = (item: {
+    label: string;
+    amount: number;
+    currency: "USD" | "INR";
+    credits: number;
+    priceLabel?: string;
+  }) => {
+    if (!getCurrentUser()) {
+      navigate({ to: "/signup" });
+      return;
+    }
+    setError(null);
+    setSelected(item);
+  };
+
+  const handlePay = async () => {
+    const user = getCurrentUser();
+    if (!user || !selected) return;
+    const selectedItem = selected;
+
+    setIsPaying(true);
+    setError(null);
+    // Close dialog first so Radix overlay does not block viewport.
+    setSelected(null);
+    try {
+      const result = await openRazorpayCheckout({
+        amount: selectedItem.amount,
+        currency: selectedItem.currency,
+        name: "ClearCUT AI",
+        description: selectedItem.label,
+        prefill: { name: user.name, email: user.email },
+      });
+
+      addCredits(user.id, selectedItem.credits);
+      recordOrder({
+        userId: user.id,
+        plan: selectedItem.label,
+        amount: selectedItem.amount,
+        currency: selectedItem.currency,
+        creditsAdded: selectedItem.credits,
+        paymentId: result.razorpay_payment_id,
+      });
+      navigate({
+        to: "/payment-success",
+        search: {
+          plan: selectedItem.label,
+          credits: String(selectedItem.credits),
+          paymentId: result.razorpay_payment_id,
+        },
+      });
+    } catch (checkoutError) {
+      setError(checkoutError instanceof Error ? checkoutError.message : "Payment failed. Please try again.");
+      setSelected(selectedItem);
+    } finally {
+      setIsPaying(false);
+    }
+  };
+
   return (
     <div className="min-h-screen">
       <SiteHeader />
@@ -82,6 +169,20 @@ function PricingPage() {
                 ))}
               </ul>
               <button
+                type="button"
+                onClick={() => {
+                  if (p.name === "Pro") {
+                    beginCheckout({
+                      label: "Pro Plan",
+                      amount: p.amount,
+                      currency: p.currency,
+                      credits: p.credits,
+                      priceLabel: p.price,
+                    });
+                    return;
+                  }
+                  navigate({ to: p.name === "Business" ? "/" : "/signup" });
+                }}
                 className={`mt-8 inline-flex w-full items-center justify-center rounded-xl px-4 py-3 text-sm font-semibold transition-transform hover:scale-[1.01] ${
                   p.featured ? "bg-brand-gradient text-white shadow-glow" : "border border-border hover:bg-muted"
                 }`}
@@ -102,20 +203,55 @@ function PricingPage() {
               <div key={c.count} className="flex items-center justify-between rounded-2xl border border-border bg-card p-6">
                 <div>
                   <div className="text-2xl font-bold">{c.count} credits</div>
-                  <div className="text-sm text-muted-foreground">${(parseInt(c.price.slice(1)) / c.count).toFixed(2)}/image</div>
+                  <div className="text-sm text-muted-foreground">${(c.amount / c.count).toFixed(2)}/image</div>
                 </div>
-                <button className="rounded-xl bg-brand-gradient px-4 py-2 text-sm font-semibold text-white shadow-glow">
-                  {c.price}
+                <button
+                  type="button"
+                  onClick={() =>
+                    beginCheckout({
+                      label: `${c.count} Credit Pack`,
+                      amount: c.amount,
+                      currency: c.currency,
+                      credits: c.count,
+                      priceLabel: c.priceLabel,
+                    })
+                  }
+                  className="rounded-xl bg-brand-gradient px-4 py-2 text-sm font-semibold text-white shadow-glow"
+                >
+                  {c.priceLabel}
                 </button>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="mt-16 text-center text-sm text-muted-foreground">
-          Need an enterprise plan? <Link to="/" className="text-foreground underline">Contact us</Link>.
+        <div id="enterprise-contact" className="mt-16 text-center text-sm text-muted-foreground">
+          Need an enterprise plan?{" "}
+          <a href="mailto:sales@clearcut.ai" className="text-foreground underline">
+            Contact sales
+          </a>
+          .
         </div>
       </main>
+      <Dialog open={Boolean(selected)} onOpenChange={(open) => !open && setSelected(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Complete payment</DialogTitle>
+            <DialogDescription>
+              {selected ? `${selected.label} - ${selected.priceLabel ?? "$0"} for ${selected.credits} credits.` : ""}
+            </DialogDescription>
+          </DialogHeader>
+          {error && <p className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>}
+          <button
+            type="button"
+            onClick={handlePay}
+            disabled={!selected || isPaying}
+            className="inline-flex w-full items-center justify-center rounded-xl bg-brand-gradient px-4 py-2.5 text-sm font-semibold text-white shadow-glow disabled:opacity-70"
+          >
+            {isPaying ? "Opening Razorpay..." : "Pay with Razorpay"}
+          </button>
+        </DialogContent>
+      </Dialog>
       <SiteFooter />
     </div>
   );

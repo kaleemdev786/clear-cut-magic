@@ -1,7 +1,16 @@
 import { Link } from "@tanstack/react-router";
 import { Sparkles } from "lucide-react";
+import { useEffect, useState } from "react";
+import { getCurrentUser, signOut, subscribeToAppState } from "@/lib/app-state";
 
 export function SiteHeader() {
+  const [user, setUser] = useState<ReturnType<typeof getCurrentUser>>(null);
+
+  useEffect(() => {
+    setUser(getCurrentUser());
+    return subscribeToAppState(() => setUser(getCurrentUser()));
+  }, []);
+
   return (
     <header className="sticky top-0 z-40 border-b border-border/50 bg-background/70 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
@@ -36,15 +45,36 @@ export function SiteHeader() {
           >
             Dashboard
           </Link>
+          <Link
+            to="/app"
+            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+            activeProps={{ className: "text-foreground" }}
+          >
+            History
+          </Link>
         </nav>
 
         <div className="flex items-center gap-2">
+          {user && (
+            <span className="hidden rounded-lg border border-border bg-card px-3 py-2 text-xs font-semibold sm:inline-flex">
+              Credits: {user.credits}
+            </span>
+          )}
           <Link
-            to="/login"
+            to={user ? "/dashboard" : "/login"}
             className="hidden rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground sm:inline-flex"
           >
-            Sign in
+            {user ? "Dashboard" : "Sign in"}
           </Link>
+          {user && (
+            <button
+              type="button"
+              onClick={signOut}
+              className="hidden rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground sm:inline-flex"
+            >
+              Sign out
+            </button>
+          )}
           <Link
             to="/app"
             className="inline-flex items-center rounded-lg bg-brand-gradient px-4 py-2 text-sm font-medium text-white shadow-glow transition-transform hover:scale-[1.02]"
@@ -65,7 +95,8 @@ export function SiteFooter() {
         <div className="flex gap-6">
           <Link to="/pricing" className="hover:text-foreground">Pricing</Link>
           <Link to="/login" className="hover:text-foreground">Sign in</Link>
-          <a href="#" className="hover:text-foreground">Privacy</a>
+          <Link to="/privacy" className="hover:text-foreground">Privacy</Link>
+          <Link to="/cookie" className="hover:text-foreground">Cookie</Link>
         </div>
       </div>
     </footer>

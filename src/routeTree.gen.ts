@@ -10,9 +10,12 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignupRouteImport } from './routes/signup'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as PaymentSuccessRouteImport } from './routes/payment-success'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as CookieRouteImport } from './routes/cookie'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 
@@ -21,9 +24,19 @@ const SignupRoute = SignupRouteImport.update({
   path: '/signup',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PricingRoute = PricingRouteImport.update({
   id: '/pricing',
   path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PaymentSuccessRoute = PaymentSuccessRouteImport.update({
+  id: '/payment-success',
+  path: '/payment-success',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -34,6 +47,11 @@ const LoginRoute = LoginRouteImport.update({
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CookieRoute = CookieRouteImport.update({
+  id: '/cookie',
+  path: '/cookie',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppRoute = AppRouteImport.update({
@@ -50,49 +68,82 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRoute
+  '/cookie': typeof CookieRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/payment-success': typeof PaymentSuccessRoute
   '/pricing': typeof PricingRoute
+  '/privacy': typeof PrivacyRoute
   '/signup': typeof SignupRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/app': typeof AppRoute
+  '/cookie': typeof CookieRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/payment-success': typeof PaymentSuccessRoute
   '/pricing': typeof PricingRoute
+  '/privacy': typeof PrivacyRoute
   '/signup': typeof SignupRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/app': typeof AppRoute
+  '/cookie': typeof CookieRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/payment-success': typeof PaymentSuccessRoute
   '/pricing': typeof PricingRoute
+  '/privacy': typeof PrivacyRoute
   '/signup': typeof SignupRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/app' | '/dashboard' | '/login' | '/pricing' | '/signup'
+  fullPaths:
+    | '/'
+    | '/app'
+    | '/cookie'
+    | '/dashboard'
+    | '/login'
+    | '/payment-success'
+    | '/pricing'
+    | '/privacy'
+    | '/signup'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/app' | '/dashboard' | '/login' | '/pricing' | '/signup'
+  to:
+    | '/'
+    | '/app'
+    | '/cookie'
+    | '/dashboard'
+    | '/login'
+    | '/payment-success'
+    | '/pricing'
+    | '/privacy'
+    | '/signup'
   id:
     | '__root__'
     | '/'
     | '/app'
+    | '/cookie'
     | '/dashboard'
     | '/login'
+    | '/payment-success'
     | '/pricing'
+    | '/privacy'
     | '/signup'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRoute
+  CookieRoute: typeof CookieRoute
   DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
+  PaymentSuccessRoute: typeof PaymentSuccessRoute
   PricingRoute: typeof PricingRoute
+  PrivacyRoute: typeof PrivacyRoute
   SignupRoute: typeof SignupRoute
 }
 
@@ -105,11 +156,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignupRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/pricing': {
       id: '/pricing'
       path: '/pricing'
       fullPath: '/pricing'
       preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/payment-success': {
+      id: '/payment-success'
+      path: '/payment-success'
+      fullPath: '/payment-success'
+      preLoaderRoute: typeof PaymentSuccessRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -124,6 +189,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cookie': {
+      id: '/cookie'
+      path: '/cookie'
+      fullPath: '/cookie'
+      preLoaderRoute: typeof CookieRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app': {
@@ -146,9 +218,12 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRoute,
+  CookieRoute: CookieRoute,
   DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
+  PaymentSuccessRoute: PaymentSuccessRoute,
   PricingRoute: PricingRoute,
+  PrivacyRoute: PrivacyRoute,
   SignupRoute: SignupRoute,
 }
 export const routeTree = rootRouteImport

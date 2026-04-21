@@ -1,5 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
 import { Sparkles, Mail, Lock } from "lucide-react";
+import { signIn } from "@/lib/app-state";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -12,6 +15,22 @@ export const Route = createFileRoute("/login")({
 });
 
 function LoginPage() {
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError(null);
+    const result = signIn(email, password);
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+    navigate({ to: "/dashboard" });
+  };
+
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
       <div className="relative hidden lg:block">
@@ -59,7 +78,7 @@ function LoginPage() {
             <div className="h-px flex-1 bg-border" />or<div className="h-px flex-1 bg-border" />
           </div>
 
-          <form className="space-y-3" onSubmit={(e) => e.preventDefault()}>
+          <form className="space-y-3" onSubmit={onSubmit}>
             <label className="block">
               <span className="text-xs font-medium text-muted-foreground">Email</span>
               <div className="relative mt-1">
@@ -68,6 +87,8 @@ function LoginPage() {
                   type="email"
                   required
                   placeholder="you@example.com"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
                   className="w-full rounded-xl border border-border bg-background py-2.5 pr-3 pl-9 text-sm outline-none transition-colors focus:border-accent focus:ring-brand"
                 />
               </div>
@@ -80,10 +101,17 @@ function LoginPage() {
                   type="password"
                   required
                   placeholder="••••••••"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
                   className="w-full rounded-xl border border-border bg-background py-2.5 pr-3 pl-9 text-sm outline-none transition-colors focus:border-accent focus:ring-brand"
                 />
               </div>
             </label>
+            {error && (
+              <p className="rounded-xl border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                {error}
+              </p>
+            )}
             <button
               type="submit"
               className="mt-2 inline-flex w-full items-center justify-center rounded-xl bg-brand-gradient px-4 py-2.5 text-sm font-semibold text-white shadow-glow"

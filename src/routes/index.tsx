@@ -168,6 +168,10 @@ function LandingPage() {
                 </ul>
                 <Link
                   to="/pricing"
+                  search={{
+                    checkout: p.name === "Pro" ? "pro" : undefined,
+                    plan: p.name === "Business" ? "business" : undefined,
+                  }}
                   className={`mt-6 inline-flex w-full items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold transition-transform hover:scale-[1.01] ${
                     p.featured
                       ? "bg-brand-gradient text-white shadow-glow"

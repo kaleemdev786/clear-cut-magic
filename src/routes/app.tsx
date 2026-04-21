@@ -6,6 +6,16 @@ import { UploadCloud, Loader2, Download, RotateCcw, Sparkles, AlertCircle, Histo
 import { SiteHeader, SiteFooter } from "@/components/site-chrome";
 import { BeforeAfter } from "@/components/before-after";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  addProcessedImage,
+  consumeCredit,
+  getCurrentUser,
+  incrementDownloadCount,
+  listProcessedImages,
+  refundCredit,
+  subscribeToAppState,
+  type ProcessedImage,
+} from "@/lib/app-state";
 
 export const Route = createFileRoute("/app")({
   head: () => ({
@@ -18,15 +28,7 @@ export const Route = createFileRoute("/app")({
 });
 
 type Status = "idle" | "uploading" | "processing" | "done" | "error";
-type HistoryItem = {
-  id: string;
-  url: string;
-  createdAt: string;
-};
-
 const N8N_WEBHOOK_URL = "https://arrowhead1.app.n8n.cloud/webhook/c2b25272-2e90-4212-b388-76695b279e2c";
-const HISTORY_STORAGE_KEY = "clearcut:history";
-const MAX_HISTORY_ITEMS = 12;
 
 const pause = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -149,31 +151,22 @@ function ToolPage() {
   const [original, setOriginal] = useState<string | null>(null);
   const [processed, setProcessed] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [history, setHistory] = useState<ProcessedImage[]>([]);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [currentUser, setCurrentUser] = useState(() => getCurrentUser());
   const originalUrlRef = useRef<string | null>(null);
   const processedBlobUrlRef = useRef<string | null>(null);
 
-  const persistHistory = useCallback((nextHistory: HistoryItem[]) => {
-    setHistory(nextHistory);
-    localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(nextHistory));
-  }, []);
-
   const addToHistory = useCallback(
     (url: string) => {
-      if (!/^https?:\/\//i.test(url)) return;
-      const nextItem: HistoryItem = {
-        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-        url,
-        createdAt: new Date().toISOString(),
-      };
-      const nextHistory = [nextItem, ...history.filter((item) => item.url !== url)].slice(0, MAX_HISTORY_ITEMS);
-      persistHistory(nextHistory);
+      if (!currentUser) return;
+      addProcessedImage(currentUser.id, url);
+      setHistory(listProcessedImages(currentUser.id));
     },
-    [history, persistHistory],
+    [currentUser],
   );
 
-  const downloadImage = useCallback(async (url: string, filename = "clearcut-result.png") => {
+  const downloadImage = useCallback(async (url: string, filename = "clearcut-result.png", imageId?: string) => {
     setIsDownloading(true);
     try {
       const response = await fetch(url);
@@ -189,6 +182,7 @@ function ToolPage() {
       link.click();
       link.remove();
       URL.revokeObjectURL(objectUrl);
+      if (imageId) incrementDownloadCount(imageId);
     } catch {
       // Fallback keeps existing behavior if direct fetch is blocked.
       const fallbackLink = document.createElement("a");
@@ -197,6 +191,7 @@ function ToolPage() {
       document.body.appendChild(fallbackLink);
       fallbackLink.click();
       fallbackLink.remove();
+      if (imageId) incrementDownloadCount(imageId);
     } finally {
       setIsDownloading(false);
     }
@@ -219,6 +214,18 @@ function ToolPage() {
 
   const handleFile = useCallback(async (file: File) => {
     setError(null);
+    const user = getCurrentUser();
+    if (!user) {
+      setError("Please sign in to remove backgrounds and track your credits.");
+      setStatus("error");
+      return;
+    }
+    const creditResult = consumeCredit(user.id, 1);
+    if (!creditResult.ok) {
+      setError("You do not have enough credits. Please buy more credits from pricing.");
+      setStatus("error");
+      return;
+    }
     if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
       setError("Please upload a JPG, PNG, or WebP image.");
       setStatus("error");
@@ -257,6 +264,7 @@ function ToolPage() {
       setStatus("done");
       addToHistory(imageUrl);
     } catch (err) {
+      refundCredit(user.id, 1);
       const message = err instanceof Error ? err.message : "Background removal failed. Please try again.";
       setError(message);
       setStatus("error");
@@ -281,24 +289,16 @@ function ToolPage() {
   );
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(HISTORY_STORAGE_KEY);
-      if (!raw) return;
-      const parsed = JSON.parse(raw) as HistoryItem[];
-      if (!Array.isArray(parsed)) return;
-      const validHistory = parsed.filter(
-        (item) =>
-          item &&
-          typeof item.id === "string" &&
-          typeof item.url === "string" &&
-          /^https?:\/\//i.test(item.url) &&
-          typeof item.createdAt === "string",
-      );
-      setHistory(validHistory.slice(0, MAX_HISTORY_ITEMS));
-    } catch {
-      // Ignore invalid localStorage payload.
-    }
+    const user = getCurrentUser();
+    setCurrentUser(user);
+    if (user) setHistory(listProcessedImages(user.id));
   }, []);
+
+  useEffect(() => subscribeToAppState(() => {
+    const user = getCurrentUser();
+    setCurrentUser(user);
+    setHistory(user ? listProcessedImages(user.id) : []);
+  }), []);
 
   useEffect(() => {
     window.addEventListener("paste", handlePaste);
@@ -332,6 +332,9 @@ function ToolPage() {
             Drop an image, get a <span className="text-brand-gradient">transparent cutout.</span>
           </h1>
           <p className="mt-3 text-muted-foreground">JPG, PNG or WebP · max 10 MB · auto-deleted in 1 hour</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {currentUser ? `Credits left: ${currentUser.credits}` : "Please sign in to start removing backgrounds."}
+          </p>
         </div>
 
         <div className="mt-10">
@@ -471,22 +474,16 @@ function ToolPage() {
                             </a>
                             <button
                               type="button"
-                              onClick={() => downloadImage(item.url)}
+                              onClick={() => downloadImage(item.url, "clearcut-result.png", item.id)}
                               className="inline-flex items-center gap-1 rounded-lg bg-brand-gradient px-3 py-1.5 text-xs font-medium text-white"
                             >
                               <Download className="h-3.5 w-3.5" /> Download
                             </button>
                           </div>
+                          <p className="mt-2 text-xs text-muted-foreground">Downloads: {item.downloads}</p>
                         </div>
                       ))}
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => persistHistory([])}
-                      className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium hover:bg-muted"
-                    >
-                      <Trash2 className="h-4 w-4" /> Clear history
-                    </button>
                   </>
                 ) : (
                   <div className="rounded-2xl border border-border bg-card p-8 text-center shadow-card">
