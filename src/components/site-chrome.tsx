@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 import { Menu, Moon, Sparkles, Sun, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getCurrentUser, signOut, subscribeToAppState } from "@/lib/app-state";
@@ -8,6 +8,14 @@ export function SiteHeader() {
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [themeReady, setThemeReady] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const location = useRouterState({ select: (s) => s.location });
+  const currentPathname = location.pathname;
+  const currentTab = (location.search as Record<string, unknown> | undefined)?.tab;
+  const isToolActive = currentPathname === "/app" && currentTab !== "history";
+  const isHistoryActive = currentPathname === "/app" && currentTab === "history";
+  const isPricingActive = currentPathname === "/pricing";
+  const isDashboardActive = currentPathname === "/dashboard";
 
   useEffect(() => {
     setUser(getCurrentUser());
@@ -45,29 +53,35 @@ export function SiteHeader() {
         <nav className="hidden items-center gap-8 md:flex">
           <Link
             to="/app"
-            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-            activeProps={{ className: "text-foreground" }}
+            search={{ tab: "editor" }}
+            className={`text-sm transition-colors hover:text-foreground ${
+              isToolActive ? "text-foreground" : "text-muted-foreground"
+            }`}
           >
             Tool
           </Link>
           <Link
             to="/pricing"
-            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-            activeProps={{ className: "text-foreground" }}
+            className={`text-sm transition-colors hover:text-foreground ${
+              isPricingActive ? "text-foreground" : "text-muted-foreground"
+            }`}
           >
             Pricing
           </Link>
           <Link
             to="/dashboard"
-            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-            activeProps={{ className: "text-foreground" }}
+            className={`text-sm transition-colors hover:text-foreground ${
+              isDashboardActive ? "text-foreground" : "text-muted-foreground"
+            }`}
           >
             Dashboard
           </Link>
           <Link
             to="/app"
-            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-            activeProps={{ className: "text-foreground" }}
+            search={{ tab: "history" }}
+            className={`text-sm transition-colors hover:text-foreground ${
+              isHistoryActive ? "text-foreground" : "text-muted-foreground"
+            }`}
           >
             History
           </Link>
@@ -105,6 +119,7 @@ export function SiteHeader() {
           )}
           <Link
             to="/app"
+            search={{ tab: "editor" }}
             className="inline-flex items-center rounded-lg bg-brand-gradient px-4 py-2 text-sm font-medium text-white shadow-glow transition-transform hover:scale-[1.02]"
           >
             Try free
@@ -126,33 +141,39 @@ export function SiteHeader() {
             <div className="grid gap-1">
               <Link
                 to="/app"
+                search={{ tab: "editor" }}
                 onClick={() => setMobileMenuOpen(false)}
-                className="rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
-                activeProps={{ className: "bg-muted text-foreground" }}
+                className={`rounded-lg px-3 py-2 text-sm hover:bg-muted hover:text-foreground ${
+                  isToolActive ? "bg-muted text-foreground" : "text-muted-foreground"
+                }`}
               >
                 Tool
               </Link>
               <Link
                 to="/pricing"
                 onClick={() => setMobileMenuOpen(false)}
-                className="rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
-                activeProps={{ className: "bg-muted text-foreground" }}
+                className={`rounded-lg px-3 py-2 text-sm hover:bg-muted hover:text-foreground ${
+                  isPricingActive ? "bg-muted text-foreground" : "text-muted-foreground"
+                }`}
               >
                 Pricing
               </Link>
               <Link
                 to="/dashboard"
                 onClick={() => setMobileMenuOpen(false)}
-                className="rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
-                activeProps={{ className: "bg-muted text-foreground" }}
+                className={`rounded-lg px-3 py-2 text-sm hover:bg-muted hover:text-foreground ${
+                  isDashboardActive ? "bg-muted text-foreground" : "text-muted-foreground"
+                }`}
               >
                 Dashboard
               </Link>
               <Link
                 to="/app"
+                search={{ tab: "history" }}
                 onClick={() => setMobileMenuOpen(false)}
-                className="rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
-                activeProps={{ className: "bg-muted text-foreground" }}
+                className={`rounded-lg px-3 py-2 text-sm hover:bg-muted hover:text-foreground ${
+                  isHistoryActive ? "bg-muted text-foreground" : "text-muted-foreground"
+                }`}
               >
                 History
               </Link>

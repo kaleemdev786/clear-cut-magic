@@ -1,8 +1,9 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { motion, AnimatePresence } from "framer-motion";
 import { UploadCloud, Loader2, Download, RotateCcw, Sparkles, AlertCircle, History, Link as LinkIcon, Trash2 } from "lucide-react";
+import { z } from "zod";
 import { SiteHeader, SiteFooter } from "@/components/site-chrome";
 import { BeforeAfter } from "@/components/before-after";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -18,6 +19,9 @@ import {
 } from "@/lib/app-state";
 
 export const Route = createFileRoute("/app")({
+  validateSearch: z.object({
+    tab: z.enum(["editor", "history"]).optional(),
+  }),
   head: () => ({
     meta: [
       { title: "Background Remover · ClearCUT AI" },
@@ -146,7 +150,9 @@ const sendToWebhookAndGetProcessedImage = async (file: File): Promise<{ imageUrl
 };
 
 function ToolPage() {
-  const [activeTab, setActiveTab] = useState<"editor" | "history">("editor");
+  const navigate = useNavigate();
+  const search = Route.useSearch();
+  const [activeTab, setActiveTab] = useState<"editor" | "history">(search.tab ?? "editor");
   const [status, setStatus] = useState<Status>("idle");
   const [original, setOriginal] = useState<string | null>(null);
   const [processed, setProcessed] = useState<string | null>(null);
@@ -157,6 +163,10 @@ function ToolPage() {
   const [currentUser, setCurrentUser] = useState(() => getCurrentUser());
   const originalUrlRef = useRef<string | null>(null);
   const processedBlobUrlRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    setActiveTab(search.tab ?? "editor");
+  }, [search.tab]);
 
   const addToHistory = useCallback(
     (url: string) => {
@@ -343,7 +353,15 @@ function ToolPage() {
         <div className="mt-10">
           <Tabs
             value={activeTab}
-            onValueChange={(value) => setActiveTab(value as "editor" | "history")}
+            onValueChange={(value) => {
+              const tab = value as "editor" | "history";
+              setActiveTab(tab);
+              navigate({
+                to: "/app",
+                search: (prev) => ({ ...prev, tab }),
+                replace: true,
+              });
+            }}
             className="space-y-4"
           >
             <TabsList className="grid h-auto w-full grid-cols-2 gap-2 rounded-xl bg-card p-2 sm:w-fit">
